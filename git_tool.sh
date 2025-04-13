@@ -1,17 +1,16 @@
-# 重新建立 macOS/Linux 可用的 git_tool.sh 檔案
-shell_script = """#!/bin/bash
+#!/bin/bash
 
 echo "========================================"
-echo "[選單] Git 操作選擇"
+echo "[Menu] Git 操作選擇"
 echo "========================================"
-echo "[0] 初始化主專案 remote 與 submodules（本地已 clone）"
-echo "[1] 初始化 submodules（含檢查是否已初始化）"
-echo "[2] 從上游 repo 更新（含 submodules）"
-echo "[3] 推送到 GitHub（含 submodules）"
-echo "[X] 離開"
+echo "[0] Initialize remote & submodules (already cloned)"
+echo "[1] Initialize submodules (with check)"
+echo "[2] Pull updates from upstream (main + submodules)"
+echo "[3] Push local changes to GitHub (main + submodules)"
+echo "[X] Exit"
 echo "========================================"
 
-read -p "請輸入選項編號: " choice
+read -p "Enter your choice: " choice
 
 function submodule_init_line() {
     subPath="$1"
@@ -20,73 +19,70 @@ function submodule_init_line() {
 
     existing_url=$(git config -f .gitmodules --get submodule."$subPath".url)
     if [ -z "$existing_url" ]; then
-        echo "[INFO] 加入 submodule：$subPath"
+        echo "[INFO] Adding submodule: $subPath"
         git submodule add "$originURL" "$subPath"
     else
-        echo "[INFO] submodule $subPath 已存在，略過加入。"
+        echo "[INFO] Submodule $subPath already exists. Skipping."
     fi
 }
 
 case "$choice" in
   0)
-    echo "[INFO] 設定主 repo 的 upstream 來源..."
+    echo "[INFO] Checking upstream remote..."
     git remote get-url upstream >/dev/null 2>&1
     if [ $? -ne 0 ]; then
-        read -p "請輸入主專案的 upstream URL: " upstreamURL
+        read -p "Enter upstream URL for main repo: " upstreamURL
         git remote add upstream "$upstreamURL"
     else
-        echo "[INFO] upstream 已存在，略過設定。"
+        echo "[INFO] Upstream already exists. Skipping."
     fi
 
     if [ -f "submodules_config.txt" ]; then
-        echo "[INFO] 開始初始化 submodules..."
+        echo "[INFO] Initializing submodules..."
         while read -r line; do
             set -- $line
             submodule_init_line "$1" "$2" "$3"
         done < submodules_config.txt
         git submodule init
         git submodule update --remote --merge
-        echo "[INFO] Submodules 初始化完成"
     else
-        echo "[INFO] 沒有 submodules_config.txt，略過 submodule 設定。"
+        echo "[INFO] No submodules_config.txt found. Skipping."
     fi
     ;;
 
   1)
     if [ -f ".gitmodules" ]; then
-        read -p "[INFO] 檢測到已有 submodules 記錄，是否重新初始化？(Y/N): " redoInit
+        read -p "[INFO] Submodules already exist. Re-initialize? (Y/N): " redoInit
         if [[ ! "$redoInit" =~ ^[Yy]$ ]]; then
-            echo "[INFO] 已取消初始化 submodules。"
+            echo "[INFO] Submodule init canceled."
             exit 0
         fi
     fi
 
     if [ -f "submodules_config.txt" ]; then
-        echo "[INFO] 開始依 submodules_config.txt 初始化 submodules..."
+        echo "[INFO] Initializing submodules from submodules_config.txt..."
         while read -r line; do
             set -- $line
             submodule_init_line "$1" "$2" "$3"
         done < submodules_config.txt
         git submodule init
         git submodule update --remote --merge
-        echo "[INFO] Submodules 初始化完成"
     else
-        echo "[INFO] 未偵測到 submodules_config.txt，略過 submodule 初始化"
+        echo "[INFO] No submodules_config.txt found. Skipping."
     fi
     ;;
 
   2)
-    echo "[INFO] 更新主專案..."
+    echo "[INFO] Pulling from upstream..."
     git remote get-url upstream >/dev/null 2>&1
     if [ $? -ne 0 ]; then
-        read -p "請輸入主專案的 upstream URL: " upstreamURL
+        read -p "Enter upstream URL for main repo: " upstreamURL
         git remote add upstream "$upstreamURL"
     fi
     git fetch upstream
     git pull upstream main --allow-unrelated-histories
 
     if [ -f "submodules_config.txt" ]; then
-        echo "[INFO] 開始更新 submodules..."
         while read -r line; do
             set -- $line
             subPath="$1"
@@ -111,16 +107,14 @@ case "$choice" in
     ;;
 
   3)
-    read -p "請輸入 commit 訊息（直接按 Enter 則使用預設：更新）: " commitMsg
-    if [ -z "$commitMsg" ]; then
-        commitMsg="更新"
-    fi
+    read -p "Enter commit message (default: 更新): " commitMsg
+    [ -z "$commitMsg" ] && commitMsg="更新"
     timestamp=$(date "+%Y-%m-%d_%H-%M")
     echo "Commit Log - $timestamp" > commit_log.txt
     echo "--------------------------" >> commit_log.txt
 
     if [ -f "submodules_config.txt" ]; then
-        echo "[INFO] 開始推送 submodules..."
+        echo "[INFO] Pushing submodules..."
         while read -r line; do
             set -- $line
             subPath="$1"
@@ -129,30 +123,25 @@ case "$choice" in
                 git add .
                 git commit -m "$commitMsg - $timestamp" 2>/dev/null
                 git push origin main
-                echo "[submodule] $subPath 提交成功：$commitMsg - $timestamp" >> ../commit_log.txt
+                echo "[submodule] $subPath committed: $commitMsg - $timestamp" >> ../commit_log.txt
                 cd ..
             fi
         done < submodules_config.txt
     fi
 
-    echo "[INFO] 提交主專案"
+    echo "[INFO] Committing main repo"
     git add .
     git commit -m "$commitMsg - $timestamp" 2>/dev/null
     git push origin main
-    echo "[main] 主專案提交成功：$commitMsg - $timestamp" >> commit_log.txt
+    echo "[main] Main repo committed: $commitMsg - $timestamp" >> commit_log.txt
     ;;
 
   X|x)
-    echo "👋 離開工具"
+    echo "👋 Exit"
     exit 0
     ;;
+
   *)
-    echo "❌ 無效選項"
+    echo "❌ Invalid choice"
     ;;
 esac
-"""
-
-with open("/mnt/data/git_tool.sh", "w", encoding="utf-8") as f:
-    f.write(shell_script)
-
-"/mnt/data/git_tool.sh"
