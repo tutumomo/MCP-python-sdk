@@ -1,0 +1,7 @@
+# 必要套件
+pyproj>=3.0.0  # 用於經緯度與UTM座標轉換
+uvicorn>=0.20.0  # 若需啟動HTTP伺服器
+pydantic>=1.10.0  # FastMCP 依賴
+starlette>=0.26.0  # FastMCP 依賴
+# 若有自訂的 mcp 套件，請根據實際情況補上
+mcp  # MCP server 相關功能
