@@ -1,0 +1,181 @@
+TITLE: Solving a Mixed-Integer Programming Problem with CVXPY
+DESCRIPTION: Implements a mixed-integer programming problem using CVXPY. Creates binary variables, defines constraints, sets up an objective function to maximize, and solves the optimization problem. Then prints the results, including the status, optimal value, and variable assignments.
+SOURCE: https://github.com/yuvraj1898/simple_mcp_server/blob/main/mcpclient/README.md#2025-04-21_snippet_1
+
+LANGUAGE: python
+CODE:
+```
+# Define the variables
+x = cp.Variable(4, boolean=True)  # x[i] = 1 if facility i is opened, 0 otherwise
+
+# Define the constraints
+constraints = [
+    x[0] + x[1] >= 1,  # At least one of facilities 0 or 1 must be opened
+    x[2] + x[3] >= 1,  # At least one of facilities 2 or 3 must be opened
+    x[0] + x[2] <= 1,  # Facilities 0 and 2 cannot both be opened
+    cp.sum(x) <= 3      # At most 3 facilities can be opened
+]
+
+# Define the objective
+revenues = np.array([10, 7, 12, 9])  # Revenues from opening each facility
+objective = cp.Maximize(revenues @ x)
+
+# Define the problem
+problem = cp.Problem(objective, constraints)
+
+# Solve the problem
+problem.solve(solver=cp.GLPK_MI)
+
+# Print the results
+print("Status:", problem.status)
+print("Optimal value:", problem.value)
+print("Optimal x:", x.value)
+```
+
+----------------------------------------
+
+TITLE: Custom MCP Client Implementation
+DESCRIPTION: Python implementation of a custom MCP client using the mcpclient library with Groq LLM integration.
+SOURCE: https://github.com/yuvraj1898/simple_mcp_server/blob/main/README.md#2025-04-21_snippet_5
+
+LANGUAGE: python
+CODE:
+```
+import asyncio
+import os
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from mcp_use import MCPAgent, MCPClient
+
+async def main():
+    # Load environment variables (e.g., GROQ_API_KEY)
+    load_dotenv()
+
+    # Define the MCP server config
+    config = {
+        "mcpServers": {
+            "info-server": {
+                "command": "/Users/yuvrajfirodiya/.local/bin/uv",
+                "args": [
+                    "--directory",
+                    "/Users/yuvrajfirodiya/Source/Python-Langchain-Projects/simple_mcp_server",
+                    "run",
+                    "server.py"
+                ],
+                "env": {
+                    "DISPLAY": ":1"
+                }
+            }
+        }
+    }
+
+    # Initialize the client
+    client = MCPClient.from_dict(config)
+
+    # Initialize the Groq LLM (Llama 3)
+    llm = ChatGroq(
+        model_name="Llama3-8b-8192",
+        streaming=True
+    )
+
+    # Build your agent
+    agent = MCPAgent(llm=llm, client=client, max_steps=30)
+
+    # Ask a question
+    result = await agent.run("tell me about donald trump")
+    print(f"\nResult: {result}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+----------------------------------------
+
+TITLE: Installing Required Dependencies
+DESCRIPTION: Commands to install necessary Python packages including MCP, LangChain Community, Wikipedia, and Arxiv libraries.
+SOURCE: https://github.com/yuvraj1898/simple_mcp_server/blob/main/README.md#2025-04-21_snippet_1
+
+LANGUAGE: bash
+CODE:
+```
+uv add "mcp[cli]"
+uv add langchain_community
+uv add wikipedia
+uv add arxiv
+```
+
+----------------------------------------
+
+TITLE: Importing Required Packages for CVXPY Implementation
+DESCRIPTION: Imports the necessary Python packages for solving a mixed-integer programming problem, including CVXPY for optimization modeling and NumPy for numerical operations.
+SOURCE: https://github.com/yuvraj1898/simple_mcp_server/blob/main/mcpclient/README.md#2025-04-21_snippet_0
+
+LANGUAGE: python
+CODE:
+```
+import cvxpy as cp
+import numpy as np
+```
+
+----------------------------------------
+
+TITLE: Initializing Project Environment with UV
+DESCRIPTION: Commands to set up the initial project environment using UV package manager and create a virtual environment.
+SOURCE: https://github.com/yuvraj1898/simple_mcp_server/blob/main/README.md#2025-04-21_snippet_0
+
+LANGUAGE: bash
+CODE:
+```
+uv init simple_mcp_server
+cd simple_mcp_server
+uv venv
+source .venv/bin/activate
+```
+
+----------------------------------------
+
+TITLE: Claude Desktop MCP Server Configuration
+DESCRIPTION: JSON configuration for setting up the MCP server in Claude Desktop settings.
+SOURCE: https://github.com/yuvraj1898/simple_mcp_server/blob/main/README.md#2025-04-21_snippet_4
+
+LANGUAGE: bash
+CODE:
+```
+{
+  "mcpServers": {
+    "info-server": {
+      "command": "/Users/yuvrajfirodiya/.local/bin/uv",
+      "args": [
+        "--directory",
+        "/Users/yuvrajfirodiya/Source/Python-Langchain-Projects/simple_mcp_server",
+        "run",
+        "server.py"
+      ]
+    }
+  }
+}
+```
+
+----------------------------------------
+
+TITLE: Running the MCP Server
+DESCRIPTION: Command to start the FastMCP server using UV.
+SOURCE: https://github.com/yuvraj1898/simple_mcp_server/blob/main/README.md#2025-04-21_snippet_2
+
+LANGUAGE: bash
+CODE:
+```
+uv run server.py
+```
+
+----------------------------------------
+
+TITLE: Opening Claude Desktop Config
+DESCRIPTION: Command to open the Claude Desktop configuration file in VS Code.
+SOURCE: https://github.com/yuvraj1898/simple_mcp_server/blob/main/README.md#2025-04-21_snippet_3
+
+LANGUAGE: bash
+CODE:
+```
+code ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
