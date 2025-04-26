@@ -1,1 +1,1 @@
-Model-Context-Protocol-specification     https://github.com/tutumomo/Model-Context-Protocol-specification.git     https://github.com/modelcontextprotocol/modelcontextprotocol.git
+MCP-civil-tools     https://github.com/tutumomo/MCP-civil-tools.git     https://github.com/tutumomo/MCP-civil-tools.git 
